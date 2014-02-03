@@ -1,5 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2011-2012 Litecoin Developers
+// Copyright (c) 2013 AuroraCoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_BIGNUM_H
@@ -416,7 +418,7 @@ public:
     CBigNum& operator>>=(unsigned int shift)
     {
         // Note: BN_rshift segfaults on 64-bit if 2^shift is greater than the number
-        //   if built on ubuntu 9.04 or 9.10, probably depends on version of OpenSSL
+        //   if built on ubuntu 9.04 or 9.10, probably depends on version of openssl
         CBigNum a = 1;
         a <<= shift;
         if (BN_cmp(&a, this) > 0)

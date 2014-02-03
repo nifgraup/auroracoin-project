@@ -1,14 +1,17 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2011-2013 AuroraCoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_MAIN_H
 #define BITCOIN_MAIN_H
 
 #include "bignum.h"
-#include "sync.h"
 #include "net.h"
+#include "key.h"
 #include "script.h"
+#include "db.h"
+#include "scrypt.h"
 
 #include <list>
 
@@ -27,11 +30,11 @@ static const unsigned int MAX_BLOCK_SIZE = 1000000;
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
-static const int64 MIN_TX_FEE = 50000;
-static const int64 MIN_RELAY_TX_FEE = 10000;
-static const int64 MAX_MONEY = 21000000 * COIN;
+static const int64 MIN_TX_FEE = 0.001 * COIN;
+static const int64 MIN_RELAY_TX_FEE = MIN_TX_FEE;
+static const int64 MAX_MONEY = 21000000 * COIN; // 
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
-static const int COINBASE_MATURITY = 100;
+static const int COINBASE_MATURITY = 80;
 // Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp.
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 #ifdef USE_UPNP
@@ -70,6 +73,7 @@ extern unsigned char pchMessageStart[4];
 
 // Settings
 extern int64 nTransactionFee;
+extern int64 nMinimumInputValue;
 
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64 nMinDiskSpace = 52428800;
@@ -535,7 +539,7 @@ public:
     {
         // Large (in bytes) low-priority (new, small-coin) transactions
         // need a fee.
-        return dPriority > COIN * 144 / 250;
+        return dPriority > COIN * 144 / 250; // Priority cutoff is 1 AuroraCoin day / 250 bytes.
     }
 
     int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, enum GetMinFee_mode mode=GMF_BLOCK) const
@@ -564,13 +568,10 @@ public:
             }
         }
 
-        // To limit dust spam, require MIN_TX_FEE/MIN_RELAY_TX_FEE if any output is less than 0.01
-        if (nMinFee < nBaseFee)
-        {
-            BOOST_FOREACH(const CTxOut& txout, vout)
-                if (txout.nValue < CENT)
-                    nMinFee = nBaseFee;
-        }
+        // To limit dust spam, add MIN_TX_FEE/MIN_RELAY_TX_FEE for any output that is less than 0.01
+        BOOST_FOREACH(const CTxOut& txout, vout)
+            if (txout.nValue < CENT)
+                nMinFee += nBaseFee;
 
         // Raise the price as the block approaches full
         if (nBlockSize != 1 && nNewBlockSize >= MAX_BLOCK_SIZE_GEN/2)
@@ -881,6 +882,13 @@ public:
         return Hash(BEGIN(nVersion), END(nNonce));
     }
 
+    uint256 GetPoWHash() const
+    {
+        uint256 thash;
+        scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
+        return thash;
+    }
+
     int64 GetBlockTime() const
     {
         return (int64)nTime;
@@ -986,8 +994,7 @@ public:
         }
 
         // Check the header
-        if (!CheckProofOfWork(GetHash(), nBits))
-            return error("CBlock::ReadFromDisk() : errors in block header");
+        // if (!CheckProofOfWork(GetPoWHash(), nBits)) return error("CBlock::ReadFromDisk() : errors in block header");
 
         return true;
     }
@@ -996,8 +1003,9 @@ public:
 
     void print() const
     {
-        printf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%d)\n",
+        printf("CBlock(hash=%s, PoW=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%d)\n",
             GetHash().ToString().substr(0,20).c_str(),
+            GetPoWHash().ToString().substr(0,20).c_str(),
             nVersion,
             hashPrevBlock.ToString().substr(0,20).c_str(),
             hashMerkleRoot.ToString().substr(0,10).c_str(),
@@ -1131,7 +1139,7 @@ public:
 
     bool CheckIndex() const
     {
-        return CheckProofOfWork(GetBlockHash(), nBits);
+        return true; // CheckProofOfWork(GetBlockHash(), nBits);
     }
 
     enum { nMedianTimeSpan=11 };
@@ -1576,7 +1584,7 @@ public:
     bool CheckSignature()
     {
         CKey key;
-        if (!key.SetPubKey(ParseHex("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284")))
+        if (!key.SetPubKey(ParseHex("04a6815913215273a109cff99907ba4a04d951873dae7acb6c973d0c9e7c88911a3dbc9aa600deac241b91707e7b4ffb30ad91c8e56e695a1ddf318592988afe0a")))
             return error("CAlert::CheckSignature() : SetPubKey failed");
         if (!key.Verify(Hash(vchMsg.begin(), vchMsg.end()), vchSig))
             return error("CAlert::CheckSignature() : verify signature failed");

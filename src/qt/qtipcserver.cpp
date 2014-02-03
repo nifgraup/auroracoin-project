@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
 #include "qtipcserver.h"
 #include "guiconstants.h"
@@ -85,7 +85,7 @@ void ipcInit()
     try {
         mq = new message_queue(open_or_create, BITCOINURI_QUEUE_NAME, 2, MAX_URI_LENGTH);
 
-        // Make sure we don't lose any bitcoin: URIs
+        // Make sure we don't lose any AuroraCoin: URIs
         for (int i = 0; i < 2; i++)
         {
             ptime d = boost::posix_time::microsec_clock::universal_time() + millisec(1);
@@ -97,7 +97,7 @@ void ipcInit()
                 break;
         }
 
-        // Make sure only one bitcoin instance is listening
+        // Make sure only one AuroraCoin instance is listening
         message_queue::remove(BITCOINURI_QUEUE_NAME);
         delete mq;
 

@@ -413,7 +413,7 @@ Tahdotko varmasti salata lompakon?</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="210"/>
-        <source>Send coins to a Bitcoin address</source>
+        <source>Send coins to an AuroraCoin address</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -841,9 +841,9 @@ Osoite: %4</translation>
     </message>
     <message>
         <location filename="../forms/messagepage.ui" line="38"/>
-        <source>The address to sign the message with  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to sign the message with  (e.g. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation>Osoite millä viesti allekirjoitetaan (esim. 
-1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
         <location filename="../forms/messagepage.ui" line="48"/>
@@ -907,8 +907,8 @@ Osoite: %4</translation>
     </message>
     <message>
         <location filename="../messagepage.cpp" line="30"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Anna Bitcoin-osoite (esim. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter an AuroraCoin address (e.g. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>Anna Bitcoin-osoite (esim. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
         <location filename="../messagepage.cpp" line="83"/>
@@ -1384,8 +1384,8 @@ Osoite: %4</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="93"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Osoite, johon Bitcoinit lähetetään  (esim. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to send the payment to  (e.g. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>Osoite, johon Bitcoinit lähetetään  (esim. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsentry.ui" line="103"/>
@@ -1414,8 +1414,8 @@ Osoite: %4</translation>
     </message>
     <message>
         <location filename="../sendcoinsentry.cpp" line="26"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Anna Bitcoin-osoite (esim. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter an AuroraCoin address (e.g. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>Anna Bitcoin-osoite (esim. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
 </context>
 <context>
@@ -1898,7 +1898,7 @@ Osoite: %4</translation>
     </message>
     <message>
         <location filename="../verifymessagedialog.cpp" line="28"/>
-        <source>Enter Bitcoin signature</source>
+        <source>Enter AuroraCoin signature</source>
         <translation type="unfinished"/>
     </message>
     <message>

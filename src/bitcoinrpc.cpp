@@ -1,5 +1,7 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2011-2012 The Litecoin Developers
+// Copyright (c) 2013 AuroraCoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -64,7 +66,6 @@ Object JSONRPCError(int code, const string& message)
     error.push_back(Pair("message", message));
     return error;
 }
-
 void RPCTypeCheck(const Array& params,
                   const list<Value_type>& typesExpected)
 {
@@ -84,7 +85,6 @@ void RPCTypeCheck(const Array& params,
         i++;
     }
 }
-
 void RPCTypeCheck(const Object& o,
                   const map<string, Value_type>& typesExpected)
 {
@@ -226,12 +226,7 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex)
     return result;
 }
 
-
-
-
-///
 /// Note: This interface may still be subject to change.
-///
 
 string CRPCTable::help(string strCommand) const
 {
@@ -289,10 +284,10 @@ Value stop(const Array& params, bool fHelp)
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "stop\n"
-            "Stop Bitcoin server.");
+            "Stop AuroraCoin server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    return "Bitcoin server stopping";
+    return "AuroraCoin server has now stopped running!";
 }
 
 
@@ -315,6 +310,41 @@ Value getdifficulty(const Array& params, bool fHelp)
             "Returns the proof-of-work difficulty as a multiple of the minimum difficulty.");
 
     return GetDifficulty();
+}
+
+
+// AuroraCoin: Return average network hashes per second based on last number of blocks.
+Value GetNetworkHashPS(int lookup) {
+    if (pindexBest == NULL)
+        return 0;
+
+    // If lookup is -1, then use blocks since last difficulty change.
+    if (lookup <= 0)
+        lookup = pindexBest->nHeight % 2016 + 1;
+
+    // If lookup is larger than chain, then set it to chain length.
+    if (lookup > pindexBest->nHeight)
+        lookup = pindexBest->nHeight;
+
+    CBlockIndex* pindexPrev = pindexBest;
+    for (int i = 0; i < lookup; i++)
+        pindexPrev = pindexPrev->pprev;
+
+    double timeDiff = pindexBest->GetBlockTime() - pindexPrev->GetBlockTime();
+    double timePerBlock = timeDiff / lookup;
+
+    return (boost::int64_t)(((double)GetDifficulty() * pow(2.0, 32)) / timePerBlock);
+}
+
+Value getnetworkhashps(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "getnetworkhashps [blocks]\n"
+            "Returns the estimated network hashes per second based on the last 120 blocks.\n"
+            "Pass in [blocks] to override # of blocks, -1 specifies since last difficulty change.");
+
+    return GetNetworkHashPS(params.size() > 0 ? params[0].get_int() : 120);
 }
 
 
@@ -391,6 +421,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("keypoololdest", (boost::int64_t)pwalletMain->GetOldestKeyPoolTime()));
     obj.push_back(Pair("keypoolsize",   pwalletMain->GetKeyPoolSize()));
     obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
+    obj.push_back(Pair("mininput",      ValueFromAmount(nMinimumInputValue)));
     if (pwalletMain->IsCrypted())
         obj.push_back(Pair("unlocked_until", (boost::int64_t)nWalletUnlockTime / 1000));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
@@ -414,6 +445,7 @@ Value getmininginfo(const Array& params, bool fHelp)
     obj.push_back(Pair("generate",      GetBoolArg("-gen")));
     obj.push_back(Pair("genproclimit",  (int)GetArg("-genproclimit", -1)));
     obj.push_back(Pair("hashespersec",  gethashespersec(params, false)));
+    obj.push_back(Pair("networkhashps", getnetworkhashps(params, false)));
     obj.push_back(Pair("pooledtx",      (uint64_t)mempool.size()));
     obj.push_back(Pair("testnet",       fTestNet));
     return obj;
@@ -425,7 +457,7 @@ Value getnewaddress(const Array& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "getnewaddress [account]\n"
-            "Returns a new Bitcoin address for receiving payments.  "
+            "Returns a new AuroraCoin address for receiving payments.  "
             "If [account] is specified (recommended), it is added to the address book "
             "so payments received with the address will be credited to [account].");
 
@@ -492,7 +524,7 @@ Value getaccountaddress(const Array& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "getaccountaddress <account>\n"
-            "Returns the current Bitcoin address for receiving payments to this account.");
+            "Returns the current AuroraCoin address for receiving payments to this account.");
 
     // Parse the account first so we don't generate a key if there's an error
     string strAccount = AccountFromValue(params[0]);
@@ -510,12 +542,12 @@ Value setaccount(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "setaccount <bitcoinaddress> <account>\n"
+            "setaccount <AuroraCoinaddress> <account>\n"
             "Sets the account associated with the given address.");
 
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
-        throw JSONRPCError(-5, "Invalid Bitcoin address");
+        throw JSONRPCError(-5, "Invalid AuroraCoin address");
 
 
     string strAccount;
@@ -540,12 +572,12 @@ Value getaccount(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "getaccount <bitcoinaddress>\n"
+            "getaccount <AuroraCoinaddress>\n"
             "Returns the account associated with the given address.");
 
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
-        throw JSONRPCError(-5, "Invalid Bitcoin address");
+        throw JSONRPCError(-5, "Invalid AuroraCoin address");
 
     string strAccount;
     map<CTxDestination, string>::iterator mi = pwalletMain->mapAddressBook.find(address.Get());
@@ -592,17 +624,33 @@ Value settxfee(const Array& params, bool fHelp)
     return true;
 }
 
+Value setmininput(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 1)
+        throw runtime_error(
+            "setmininput <amount>\n"
+            "<amount> is a real and is rounded to the nearest 0.00000001");
+
+    // Amount
+    int64 nAmount = 0;
+    if (params[0].get_real() != 0.0)
+        nAmount = AmountFromValue(params[0]);        // rejects 0.0 amounts
+
+    nMinimumInputValue = nAmount;
+    return true;
+}
+
 Value sendtoaddress(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
-            "sendtoaddress <bitcoinaddress> <amount> [comment] [comment-to]\n"
+            "sendtoaddress <AuroraCoinaddress> <amount> [comment] [comment-to]\n"
             "<amount> is a real and is rounded to the nearest 0.00000001"
             + HelpRequiringPassphrase());
 
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
-        throw JSONRPCError(-5, "Invalid Bitcoin address");
+        throw JSONRPCError(-5, "Invalid AuroraCoin address");
 
     // Amount
     int64 nAmount = AmountFromValue(params[1]);
@@ -628,7 +676,7 @@ Value signmessage(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 2)
         throw runtime_error(
-            "signmessage <bitcoinaddress> <message>\n"
+            "signmessage <AuroraCoinaddress> <message>\n"
             "Sign a message with the private key of an address");
 
     EnsureWalletIsUnlocked();
@@ -663,7 +711,7 @@ Value verifymessage(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
-            "verifymessage <bitcoinaddress> <signature> <message>\n"
+            "verifymessage <AuroraCoinaddress> <signature> <message>\n"
             "Verify a signed message");
 
     string strAddress  = params[0].get_str();
@@ -700,14 +748,14 @@ Value getreceivedbyaddress(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "getreceivedbyaddress <bitcoinaddress> [minconf=1]\n"
-            "Returns the total amount received by <bitcoinaddress> in transactions with at least [minconf] confirmations.");
+            "getreceivedbyaddress <AuroraCoinaddress> [minconf=1]\n"
+            "Returns the total amount received by <AuroraCoinaddress> in transactions with at least [minconf] confirmations.");
 
-    // Bitcoin address
+    // AuroraCoin address
     CBitcoinAddress address = CBitcoinAddress(params[0].get_str());
     CScript scriptPubKey;
     if (!address.IsValid())
-        throw JSONRPCError(-5, "Invalid Bitcoin address");
+        throw JSONRPCError(-5, "Invalid AuroraCoin address");
     scriptPubKey.SetDestination(address.Get());
     if (!IsMine(*pwalletMain,scriptPubKey))
         return (double)0.0;
@@ -921,14 +969,14 @@ Value sendfrom(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 3 || params.size() > 6)
         throw runtime_error(
-            "sendfrom <fromaccount> <tobitcoinaddress> <amount> [minconf=1] [comment] [comment-to]\n"
+            "sendfrom <fromaccount> <toAuroraCoinaddress> <amount> [minconf=1] [comment] [comment-to]\n"
             "<amount> is a real and is rounded to the nearest 0.00000001"
             + HelpRequiringPassphrase());
 
     string strAccount = AccountFromValue(params[0]);
     CBitcoinAddress address(params[1].get_str());
     if (!address.IsValid())
-        throw JSONRPCError(-5, "Invalid Bitcoin address");
+        throw JSONRPCError(-5, "Invalid AuroraCoin address");
     int64 nAmount = AmountFromValue(params[2]);
     int nMinDepth = 1;
     if (params.size() > 3)
@@ -984,7 +1032,7 @@ Value sendmany(const Array& params, bool fHelp)
     {
         CBitcoinAddress address(s.name_);
         if (!address.IsValid())
-            throw JSONRPCError(-5, string("Invalid Bitcoin address:")+s.name_);
+            throw JSONRPCError(-5, string("Invalid AuroraCoin address:")+s.name_);
 
         if (setAddress.count(address))
             throw JSONRPCError(-8, string("Invalid parameter, duplicated address: ")+s.name_);
@@ -1027,7 +1075,7 @@ Value addmultisigaddress(const Array& params, bool fHelp)
     {
         string msg = "addmultisigaddress <nrequired> <'[\"key\",\"key\"]'> [account]\n"
             "Add a nrequired-to-sign multisignature address to the wallet\"\n"
-            "each key is a Bitcoin address or hex-encoded public key\n"
+            "each key is a AuroraCoin address or hex-encoded public key\n"
             "If [account] is specified, assign address to [account].";
         throw runtime_error(msg);
     }
@@ -1051,7 +1099,7 @@ Value addmultisigaddress(const Array& params, bool fHelp)
     {
         const std::string& ks = keys[i].get_str();
 
-        // Case 1: Bitcoin address and we have full public key:
+        // Case 1: AuroraCoin address and we have full public key:
         CBitcoinAddress address(ks);
         if (address.IsValid())
         {
@@ -1743,7 +1791,7 @@ Value encryptwallet(const Array& params, bool fHelp)
     // slack space in .dat files; that is bad if the old data is
     // unencrypted private keys.  So:
     StartShutdown();
-    return "wallet encrypted; Bitcoin server stopping, restart to run with encrypted wallet";
+    return "wallet encrypted; AuroraCoin server stopping, restart to run with encrypted wallet";
 }
 
 class DescribeAddressVisitor : public boost::static_visitor<Object>
@@ -1785,8 +1833,8 @@ Value validateaddress(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "validateaddress <bitcoinaddress>\n"
-            "Return information about <bitcoinaddress>.");
+            "validateaddress <AuroraCoinaddress>\n"
+            "Return information about <AuroraCoinaddress>.");
 
     CBitcoinAddress address(params[0].get_str());
     bool isValid = address.IsValid();
@@ -1810,6 +1858,134 @@ Value validateaddress(const Array& params, bool fHelp)
     return ret;
 }
 
+Value getworkex(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 2)
+        throw runtime_error(
+            "getworkex [data, coinbase]\n"
+            "If [data, coinbase] is not specified, returns extended work data.\n"
+        );
+
+    if (vNodes.empty())
+        throw JSONRPCError(-9, "AuroraCoin is not connected!");
+
+    if (IsInitialBlockDownload())
+        throw JSONRPCError(-10, "AuroraCoin is downloading blocks...");
+
+    typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
+    static mapNewBlock_t mapNewBlock;
+    static vector<CBlock*> vNewBlock;
+    static CReserveKey reservekey(pwalletMain);
+
+    if (params.size() == 0)
+    {
+        // Update block
+        static unsigned int nTransactionsUpdatedLast;
+        static CBlockIndex* pindexPrev;
+        static int64 nStart;
+        static CBlock* pblock;
+        if (pindexPrev != pindexBest ||
+            (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60))
+        {
+            if (pindexPrev != pindexBest)
+            {
+                // Deallocate old blocks since they're obsolete now
+                mapNewBlock.clear();
+                BOOST_FOREACH(CBlock* pblock, vNewBlock)
+                    delete pblock;
+                vNewBlock.clear();
+            }
+            nTransactionsUpdatedLast = nTransactionsUpdated;
+            pindexPrev = pindexBest;
+            nStart = GetTime();
+
+            // Create new block
+            pblock = CreateNewBlock(reservekey);
+            if (!pblock)
+                throw JSONRPCError(-7, "Out of memory");
+            vNewBlock.push_back(pblock);
+        }
+
+        // Update nTime
+        pblock->nTime = max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+        pblock->nNonce = 0;
+
+        // Update nExtraNonce
+        static unsigned int nExtraNonce = 0;
+        IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
+
+        // Save
+        mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);
+
+        // Prebuild hash buffers
+        char pmidstate[32];
+        char pdata[128];
+        char phash1[64];
+        FormatHashBuffers(pblock, pmidstate, pdata, phash1);
+
+        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+
+        CTransaction coinbaseTx = pblock->vtx[0];
+        std::vector<uint256> merkle = pblock->GetMerkleBranch(0);
+
+        Object result;
+        result.push_back(Pair("data",     HexStr(BEGIN(pdata), END(pdata))));
+        result.push_back(Pair("target",   HexStr(BEGIN(hashTarget), END(hashTarget))));
+
+        CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+        ssTx << coinbaseTx;
+        result.push_back(Pair("coinbase", HexStr(ssTx.begin(), ssTx.end())));
+
+        Array merkle_arr;
+        printf("DEBUG: merkle size %i\n", merkle.size());
+
+        BOOST_FOREACH(uint256 merkleh, merkle) {
+            printf("%s\n", merkleh.ToString().c_str());
+            merkle_arr.push_back(HexStr(BEGIN(merkleh), END(merkleh)));
+        }
+
+        result.push_back(Pair("merkle", merkle_arr));
+
+
+        return result;
+    }
+    else
+    {
+        // Parse parameters
+        vector<unsigned char> vchData = ParseHex(params[0].get_str());
+        vector<unsigned char> coinbase;
+
+        if(params.size() == 2)
+            coinbase = ParseHex(params[1].get_str());
+
+        if (vchData.size() != 128)
+            throw JSONRPCError(-8, "Invalid parameter");
+
+        CBlock* pdata = (CBlock*)&vchData[0];
+
+        // Byte reverse
+        for (int i = 0; i < 128/4; i++)
+            ((unsigned int*)pdata)[i] = ByteReverse(((unsigned int*)pdata)[i]);
+
+        // Get saved block
+        if (!mapNewBlock.count(pdata->hashMerkleRoot))
+            return false;
+        CBlock* pblock = mapNewBlock[pdata->hashMerkleRoot].first;
+
+        pblock->nTime = pdata->nTime;
+        pblock->nNonce = pdata->nNonce;
+
+        if(coinbase.size() == 0)
+            pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
+        else
+            CDataStream(coinbase, SER_NETWORK, PROTOCOL_VERSION) >> pblock->vtx[0]; // FIXME - HACK!
+
+        pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+
+        return CheckWork(pblock, *pwalletMain, reservekey);
+    }
+}
+
 Value getwork(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -1823,10 +1999,10 @@ Value getwork(const Array& params, bool fHelp)
             "If [data] is specified, tries to solve the block and returns true if it was successful.");
 
     if (vNodes.empty())
-        throw JSONRPCError(-9, "Bitcoin is not connected!");
+        throw JSONRPCError(-9, "AuroraCoin is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(-10, "Bitcoin is downloading blocks...");
+        throw JSONRPCError(-10, "AuroraCoin is downloading blocks...");
 
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
     static mapNewBlock_t mapNewBlock;    // FIXME: thread safety
@@ -1886,6 +2062,7 @@ Value getwork(const Array& params, bool fHelp)
         result.push_back(Pair("data",     HexStr(BEGIN(pdata), END(pdata))));
         result.push_back(Pair("hash1",    HexStr(BEGIN(phash1), END(phash1)))); // deprecated
         result.push_back(Pair("target",   HexStr(BEGIN(hashTarget), END(hashTarget))));
+        result.push_back(Pair("algorithm", "scrypt:1024,1,1"));  // AuroraCoin: specify that we should use the scrypt algorithm
         return result;
     }
     else
@@ -1915,30 +2092,49 @@ Value getwork(const Array& params, bool fHelp)
 }
 
 
-Value getmemorypool(const Array& params, bool fHelp)
+Value getblocktemplate(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1)
+    if (fHelp || params.size() != 1)
         throw runtime_error(
-            "getmemorypool [data]\n"
-            "If [data] is not specified, returns data needed to construct a block to work on:\n"
+            "getblocktemplate [params]\n"
+            "If [params] does not contain a \"data\" key, returns data needed to construct a block to work on:\n"
             "  \"version\" : block version\n"
             "  \"previousblockhash\" : hash of current highest block\n"
             "  \"transactions\" : contents of non-coinbase transactions that should be included in the next block\n"
+            "  \"coinbaseaux\" : data that should be included in coinbase\n"
             "  \"coinbasevalue\" : maximum allowable input to coinbase transaction, including the generation award and transaction fees\n"
-            "  \"coinbaseflags\" : data that should be included in coinbase so support for new features can be judged\n"
-            "  \"time\" : timestamp appropriate for next block\n"
+            "  \"target\" : hash target\n"
             "  \"mintime\" : minimum timestamp appropriate for next block\n"
             "  \"curtime\" : current timestamp\n"
+            "  \"mutable\" : list of ways the block template may be changed\n"
+            "  \"noncerange\" : range of valid nonces\n"
+            "  \"sigoplimit\" : limit of sigops in blocks\n"
+            "  \"sizelimit\" : limit of block size\n"
             "  \"bits\" : compressed target of next block\n"
-            "If [data] is specified, tries to solve the block and returns true if it was successful.");
+            "  \"height\" : height of the next block\n"
+            "If [params] does contain a \"data\" key, tries to solve the block and returns null if it was successful (and \"rejected\" if not)\n"
+            "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.");
 
-    if (params.size() == 0)
+    const Object& oparam = params[0].get_obj();
+    std::string strMode;
+    {
+        const Value& modeval = find_value(oparam, "mode");
+        if (modeval.type() == str_type)
+            strMode = modeval.get_str();
+        else
+        if (find_value(oparam, "data").type() == null_type)
+            strMode = "template";
+        else
+            strMode = "submit";
+    }
+
+    if (strMode == "template")
     {
         if (vNodes.empty())
-            throw JSONRPCError(-9, "Bitcoin is not connected!");
+            throw JSONRPCError(-9, "AuroraCoin is not connected!");
 
         if (IsInitialBlockDownload())
-            throw JSONRPCError(-10, "Bitcoin is downloading blocks...");
+            throw JSONRPCError(-10, "AuroraCoin is downloading blocks...");
 
         static CReserveKey reservekey(pwalletMain);
 
@@ -1967,38 +2163,93 @@ Value getmemorypool(const Array& params, bool fHelp)
         pblock->nNonce = 0;
 
         Array transactions;
-        BOOST_FOREACH(CTransaction tx, pblock->vtx) {
-            if(tx.IsCoinBase())
+        map<uint256, int64_t> setTxIndex;
+        int i = 0;
+        CTxDB txdb("r");
+        BOOST_FOREACH (CTransaction& tx, pblock->vtx)
+        {
+            uint256 txHash = tx.GetHash();
+            setTxIndex[txHash] = i++;
+
+            if (tx.IsCoinBase())
                 continue;
+
+            Object entry;
 
             CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
             ssTx << tx;
+            entry.push_back(Pair("data", HexStr(ssTx.begin(), ssTx.end())));
 
-            transactions.push_back(HexStr(ssTx.begin(), ssTx.end()));
+            entry.push_back(Pair("hash", txHash.GetHex()));
+
+            MapPrevTx mapInputs;
+            map<uint256, CTxIndex> mapUnused;
+            bool fInvalid = false;
+            if (tx.FetchInputs(txdb, mapUnused, false, false, mapInputs, fInvalid))
+            {
+                entry.push_back(Pair("fee", (int64_t)(tx.GetValueIn(mapInputs) - tx.GetValueOut())));
+
+                Array deps;
+                BOOST_FOREACH (MapPrevTx::value_type& inp, mapInputs)
+                {
+                    if (setTxIndex.count(inp.first))
+                        deps.push_back(setTxIndex[inp.first]);
+                }
+                entry.push_back(Pair("depends", deps));
+
+                int64_t nSigOps = tx.GetLegacySigOpCount();
+                nSigOps += tx.GetP2SHSigOpCount(mapInputs);
+                entry.push_back(Pair("sigops", nSigOps));
+            }
+
+            transactions.push_back(entry);
+        }
+
+        Object aux;
+        aux.push_back(Pair("flags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
+
+        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+
+        static Array aMutable;
+        if (aMutable.empty())
+        {
+            aMutable.push_back("time");
+            aMutable.push_back("transactions");
+            aMutable.push_back("prevblock");
         }
 
         Object result;
         result.push_back(Pair("version", pblock->nVersion));
         result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
         result.push_back(Pair("transactions", transactions));
+        result.push_back(Pair("coinbaseaux", aux));
         result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
-        result.push_back(Pair("coinbaseflags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
-        result.push_back(Pair("time", (int64_t)pblock->nTime));
+        result.push_back(Pair("target", hashTarget.GetHex()));
         result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
-        result.push_back(Pair("curtime", (int64_t)GetAdjustedTime()));
+        result.push_back(Pair("mutable", aMutable));
+        result.push_back(Pair("noncerange", "00000000ffffffff"));
+        result.push_back(Pair("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS));
+        result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SIZE));
+        result.push_back(Pair("curtime", (int64_t)pblock->nTime));
         result.push_back(Pair("bits", HexBits(pblock->nBits)));
+        result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
 
         return result;
     }
     else
+    if (strMode == "submit")
     {
         // Parse parameters
-        CDataStream ssBlock(ParseHex(params[0].get_str()), SER_NETWORK, PROTOCOL_VERSION);
+        CDataStream ssBlock(ParseHex(find_value(oparam, "data").get_str()), SER_NETWORK, PROTOCOL_VERSION);
         CBlock pblock;
         ssBlock >> pblock;
 
-        return ProcessBlock(NULL, &pblock);
+        bool fAccepted = ProcessBlock(NULL, &pblock);
+
+        return fAccepted ? Value::null : "rejected";
     }
+
+    throw JSONRPCError(-8, "Invalid mode");
 }
 
 Value getrawmempool(const Array& params, bool fHelp)
@@ -2076,6 +2327,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getconnectioncount",     &getconnectioncount,     true },
     { "getpeerinfo",            &getpeerinfo,            true },
     { "getdifficulty",          &getdifficulty,          true },
+    { "getnetworkhashps",       &getnetworkhashps,       true },
     { "getgenerate",            &getgenerate,            true },
     { "setgenerate",            &setgenerate,            true },
     { "gethashespersec",        &gethashespersec,        true },
@@ -2111,9 +2363,11 @@ static const CRPCCommand vRPCCommands[] =
     { "signmessage",            &signmessage,            false },
     { "verifymessage",          &verifymessage,          false },
     { "getwork",                &getwork,                true },
+    { "getworkex",              &getworkex,              true },
     { "listaccounts",           &listaccounts,           false },
     { "settxfee",               &settxfee,               false },
-    { "getmemorypool",          &getmemorypool,          true },
+    { "setmininput",            &setmininput,            false },
+    { "getblocktemplate",       &getblocktemplate,       true },
     { "listsinceblock",         &listsinceblock,         false },
     { "dumpprivkey",            &dumpprivkey,            false },
     { "importprivkey",          &importprivkey,          false },
@@ -2156,7 +2410,7 @@ string HTTPPost(const string& strMsg, const map<string,string>& mapRequestHeader
 {
     ostringstream s;
     s << "POST / HTTP/1.1\r\n"
-      << "User-Agent: bitcoin-json-rpc/" << FormatFullVersion() << "\r\n"
+      << "User-Agent: AuroraCoin-json-rpc/" << FormatFullVersion() << "\r\n"
       << "Host: 127.0.0.1\r\n"
       << "Content-Type: application/json\r\n"
       << "Content-Length: " << strMsg.size() << "\r\n"
@@ -2187,7 +2441,7 @@ static string HTTPReply(int nStatus, const string& strMsg, bool keepalive)
     if (nStatus == 401)
         return strprintf("HTTP/1.0 401 Authorization Required\r\n"
             "Date: %s\r\n"
-            "Server: bitcoin-json-rpc/%s\r\n"
+            "Server: AuroraCoin-json-rpc/%s\r\n"
             "WWW-Authenticate: Basic realm=\"jsonrpc\"\r\n"
             "Content-Type: text/html\r\n"
             "Content-Length: 296\r\n"
@@ -2214,7 +2468,7 @@ static string HTTPReply(int nStatus, const string& strMsg, bool keepalive)
             "Connection: %s\r\n"
             "Content-Length: %d\r\n"
             "Content-Type: application/json\r\n"
-            "Server: bitcoin-json-rpc/%s\r\n"
+            "Server: AuroraCoin-json-rpc/%s\r\n"
             "\r\n"
             "%s",
         nStatus,
@@ -2312,7 +2566,7 @@ bool HTTPAuthorized(map<string, string>& mapHeaders)
 }
 
 //
-// JSON-RPC protocol.  Bitcoin speaks version 1.0 for maximum compatibility,
+// JSON-RPC protocol.  AuroraCoin speaks version 1.0 for maximum compatibility,
 // but uses JSON-RPC 1.1/2.0 standards for parts of the 1.0 standard that were
 // unspecified (HTTP errors and contents of 'error').
 //
@@ -2590,7 +2844,7 @@ void ThreadRPCServer2(void* parg)
     {
         unsigned char rand_pwd[32];
         RAND_bytes(rand_pwd, 32);
-        string strWhatAmI = "To use bitcoind";
+        string strWhatAmI = "To use AuroraCoind";
         if (mapArgs.count("-server"))
             strWhatAmI = strprintf(_("To use the %s option"), "\"-server\"");
         else if (mapArgs.count("-daemon"))
@@ -2598,7 +2852,7 @@ void ThreadRPCServer2(void* parg)
         uiInterface.ThreadSafeMessageBox(strprintf(
             _("%s, you must set a rpcpassword in the configuration file:\n %s\n"
               "It is recommended you use the following random password:\n"
-              "rpcuser=bitcoinrpc\n"
+              "rpcuser=AuroraCoinrpc\n"
               "rpcpassword=%s\n"
               "(you do not need to remember this password)\n"
               "If the file does not exist, create it with owner-readable-only file permissions.\n"),
@@ -2636,18 +2890,20 @@ void ThreadRPCServer2(void* parg)
     // Try a dual IPv6/IPv4 socket, falling back to separate IPv4 and IPv6 sockets
     const bool loopback = !mapArgs.count("-rpcallowip");
     asio::ip::address bindAddress = loopback ? asio::ip::address_v6::loopback() : asio::ip::address_v6::any();
-    ip::tcp::endpoint endpoint(bindAddress, GetArg("-rpcport", 8332));
+    ip::tcp::endpoint endpoint(bindAddress, GetArg("-rpcport", 12341));
+    boost::system::error_code v6_only_error;
+    boost::shared_ptr<ip::tcp::acceptor> acceptor(new ip::tcp::acceptor(io_service));
 
     boost::signals2::signal<void ()> StopRequests;
 
+    bool fListening = false;
+    std::string strerr;
     try
     {
-        boost::shared_ptr<ip::tcp::acceptor> acceptor(new ip::tcp::acceptor(io_service));
         acceptor->open(endpoint.protocol());
         acceptor->set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 
         // Try making the socket dual IPv6/IPv4 (if listening on the "any" address)
-        boost::system::error_code v6_only_error;
         acceptor->set_option(boost::asio::ip::v6_only(loopback), v6_only_error);
 
         acceptor->bind(endpoint);
@@ -2659,8 +2915,16 @@ void ThreadRPCServer2(void* parg)
                     static_cast<void (ip::tcp::acceptor::*)()>(&ip::tcp::acceptor::close), acceptor.get())
                 .track(acceptor));
 
+            fListening = true;
+        }
+        catch(boost::system::system_error &e)
+        {
+            strerr = strprintf(_("An error occurred while setting up the RPC port %i for listening on IPv6, falling back to IPv4: %s"), endpoint.port(), e.what());
+        }
+
+        try {
         // If dual IPv6/IPv4 failed (or we're opening loopback interfaces only), open IPv4 separately
-        if (loopback || v6_only_error)
+        if (!fListening || loopback || v6_only_error)
         {
             bindAddress = loopback ? asio::ip::address_v4::loopback() : asio::ip::address_v4::any();
             endpoint.address(bindAddress);
@@ -2676,12 +2940,17 @@ void ThreadRPCServer2(void* parg)
             StopRequests.connect(signals2::slot<void ()>(
                         static_cast<void (ip::tcp::acceptor::*)()>(&ip::tcp::acceptor::close), acceptor.get())
                     .track(acceptor));
+
+            fListening = true;
         }
     }
     catch(boost::system::system_error &e)
     {
-        uiInterface.ThreadSafeMessageBox(strprintf(_("An error occured while setting up the RPC port %i for listening: %s"), endpoint.port(), e.what()),
-                             _("Error"), CClientUIInterface::OK | CClientUIInterface::MODAL);
+        strerr = strprintf(_("An error occurred while setting up the RPC port %i for listening on IPv4: %s"), endpoint.port(), e.what());
+    }
+
+    if (!fListening) {
+        uiInterface.ThreadSafeMessageBox(strerr, _("Error"), CClientUIInterface::OK | CClientUIInterface::MODAL);
         StartShutdown();
         return;
     }
@@ -2721,7 +2990,7 @@ void JSONRequest::parse(const Value& valRequest)
     if (valMethod.type() != str_type)
         throw JSONRPCError(-32600, "Method must be a string");
     strMethod = valMethod.get_str();
-    if (strMethod != "getwork" && strMethod != "getmemorypool")
+    if (strMethod != "getwork" && strMethod != "getblocktemplate")
         printf("ThreadRPCServer method=%s\n", strMethod.c_str());
 
     // Parse params
@@ -2912,7 +3181,7 @@ Object CallRPC(const string& strMethod, const Array& params)
     asio::ssl::stream<asio::ip::tcp::socket> sslStream(io_service, context);
     SSLIOStreamDevice<asio::ip::tcp> d(sslStream, fUseSSL);
     iostreams::stream< SSLIOStreamDevice<asio::ip::tcp> > stream(d);
-    if (!d.connect(GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", "8332")))
+    if (!d.connect(GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", "12341")))
         throw runtime_error("couldn't connect to server");
 
     // HTTP basic authentication
@@ -2984,6 +3253,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "setgenerate"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "sendtoaddress"          && n > 1) ConvertTo<double>(params[1]);
     if (strMethod == "settxfee"               && n > 0) ConvertTo<double>(params[0]);
+    if (strMethod == "setmininput"            && n > 0) ConvertTo<double>(params[0]);
     if (strMethod == "getreceivedbyaddress"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "getreceivedbyaccount"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "listreceivedbyaddress"  && n > 0) ConvertTo<boost::int64_t>(params[0]);
@@ -3000,6 +3270,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "listtransactions"       && n > 2) ConvertTo<boost::int64_t>(params[2]);
     if (strMethod == "listaccounts"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "walletpassphrase"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "getblocktemplate"       && n > 0) ConvertTo<Object>(params[0]);
     if (strMethod == "listsinceblock"         && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "sendmany"               && n > 1) ConvertTo<Object>(params[1]);
     if (strMethod == "sendmany"               && n > 2) ConvertTo<boost::int64_t>(params[2]);

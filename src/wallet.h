@@ -1,5 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
+// Copyright (c) 2011-2012 Litecoin Developers
+// Copyright (c) 2013 Feathercoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_WALLET_H
@@ -186,7 +188,9 @@ public:
     bool IsMine(const CTransaction& tx) const
     {
         BOOST_FOREACH(const CTxOut& txout, tx.vout)
-            if (IsMine(txout))
+            // If output is less than minimum value, then don't include transaction.
+            // This is to help deal with dust spam bloating the wallet.
+            if (IsMine(txout) && txout.nValue >= nMinimumInputValue)
                 return true;
         return false;
     }

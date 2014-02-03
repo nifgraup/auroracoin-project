@@ -58,7 +58,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sign a message to prove you own a Bitcoin address</source>
+        <source>Sign a message to prove you own an AuroraCoin address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -217,7 +217,7 @@ Are you sure you wish to encrypt your wallet?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Wallet passphrase was succesfully changed.</source>
+        <source>Wallet passphrase was successfully changed.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -331,11 +331,11 @@ Are you sure you wish to encrypt your wallet?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
+        <source>Send coins to an AuroraCoin address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sign a message to prove you own a Bitcoin address</source>
+        <source>Sign a message to prove you own an AuroraCoin address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1093,7 +1093,7 @@ Address: %4
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to send the payment to  (e.g. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1117,7 +1117,7 @@ Address: %4
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>Enter an AuroraCoin address (e.g. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1136,7 +1136,7 @@ Address: %4
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The address to sign the message with (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to sign the message with (e.g. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1184,7 +1184,7 @@ Address: %4
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The address the message was signed with (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address the message was signed with (e.g. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1196,7 +1196,7 @@ Address: %4
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>Enter an AuroraCoin address (e.g. ANS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1204,7 +1204,7 @@ Address: %4
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter Bitcoin signature</source>
+        <source>Enter AuroraCoin signature</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

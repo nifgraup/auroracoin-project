@@ -98,7 +98,7 @@ void AskPassphraseDialog::accept()
             break;
         }
         QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm wallet encryption"),
-                 tr("WARNING: If you encrypt your wallet and lose your passphrase, you will <b>LOSE ALL OF YOUR BITCOINS</b>!\nAre you sure you wish to encrypt your wallet?"),
+                 tr("WARNING: If you encrypt your wallet and lose your passphrase, you will <b>LOSE ALL OF YOUR AuroraCoinS</b>!\nAre you sure you wish to encrypt your wallet?"),
                  QMessageBox::Yes|QMessageBox::Cancel,
                  QMessageBox::Cancel);
         if(retval == QMessageBox::Yes)
@@ -108,7 +108,7 @@ void AskPassphraseDialog::accept()
                 if(model->setWalletEncrypted(true, newpass1))
                 {
                     QMessageBox::warning(this, tr("Wallet encrypted"),
-                                         tr("Bitcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer."));
+                                         tr("AuroraCoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your AuroraCoins from being stolen by malware infecting your computer."));
                     QApplication::quit();
                 }
                 else
@@ -157,7 +157,7 @@ void AskPassphraseDialog::accept()
             if(model->changePassphrase(oldpass, newpass1))
             {
                 QMessageBox::information(this, tr("Wallet encrypted"),
-                                     tr("Wallet passphrase was succesfully changed."));
+                                     tr("Wallet passphrase was successfully changed."));
                 QDialog::accept(); // Success
             }
             else
